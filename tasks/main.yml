@@ -1,0 +1,39 @@
+---
+- name: Installing strongswan Dependencies
+  when: ansible_os_family == "RedHat"
+  ansible.builtin.dnf:
+    name: 
+     - firewalld
+     - python3-firewall
+    update_cache: yes
+    state: latest
+
+- name: started firewalld
+  when: ansible_os_family == "RedHat"
+  ansible.builtin.systemd:
+    name: firewalld.service
+    state: started
+    enabled: true
+
+- name: allow service
+  ansible.posix.firewalld:
+    zone: public
+    service: "{{ item }}"
+    permanent: yes
+    immediate: yes
+    state: enabled
+  loop: "{{ firewall_services }}"
+  
+- name: enable access to internet
+  ansible.posix.firewalld:
+    zone: public
+    masquerade: yes
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Restart firewalld
+  when: ansible_os_family == "RedHat"
+  ansible.builtin.systemd:
+    name: firewalld.service
+    state: restarted
